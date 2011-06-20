@@ -41,23 +41,23 @@ exports.createServer = (app) ->
 			emit.apply emit, ['setCurrentCase', case_number, returnedValue]
 			sessionManager.publishToAll 'PlayerStartedCase', thisPlayer, returnedValue
 		@getCase = (activity_id) ->
-		  return activityManager.current[id].getCaseID
+			return activityManager.current[id].getCaseID
 		@pointColored = (activity_id, player_id, points) ->
-      players = activityManager.current[activity_id].getPlayers()
-      for point in points
-        activityManager.current[activity_id].createPoint player_id, point
-        sessionManager.publishToActivity players, 'pointColored', player_id, points
-    @pointErased = (activity_id, player_id, points) ->
-      players = activityManager.current[activity_id].getPlayers()
-      for point in points
-        activityManager.current[activity_id].deletePoint player_id, point
-        sessionManager.publishToActivity players, 'pointErased', player_id, points
-    @mouseDownErase = (activity_id, player_id, layer) ->
-      players = activityManager.current[activity_id].getPlayers()
-      sessionManager.publishToActivity players, 'mouseDownErase', player_id, layer
-    @mouseUpErase = (activity_id, player_id, layer) ->
-      players = activityManager.current[activity_id].getPlayers()
-      sessionManager.publishToActivity players, 'mouseUpErase', player_id, layer
+			players = activityManager.current[activity_id].getPlayers()
+			for point in points
+				activityManager.current[activity_id].createPoint player_id, point
+				sessionManager.publishToActivity players, 'pointColored', player_id, points
+		@pointErased = (activity_id, player_id, points) ->
+			players = activityManager.current[activity_id].getPlayers()
+			for point in points
+				activityManager.current[activity_id].deletePoint player_id, point
+				sessionManager.publishToActivity players, 'pointErased', player_id, points
+		@mouseDownErase = (activity_id, player_id, layer) ->
+			players = activityManager.current[activity_id].getPlayers()
+			sessionManager.publishToActivity players, 'mouseDownErase', player_id, layer
+		@mouseUpErase = (activity_id, player_id, layer) ->
+			players = activityManager.current[activity_id].getPlayers()
+			sessionManager.publishToActivity players, 'mouseUpErase', player_id, layer
 		@clearCanvas = (activity_id, player_id, layer) ->
 			activityManager.current[activity_id].clearCanvas player_id, layer
 			players = activityManager.current[activity_id].getPlayers()

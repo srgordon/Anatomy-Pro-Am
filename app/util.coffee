@@ -155,10 +155,12 @@ class ContouringActivity
 	removePlayer: (player) ->
 		@players[player] = null
 	getPlayers: () ->
-	  playerIDs = []
-	  Hash(@players).forEach (player) ->
-	    playerIDs.push player.id
-	  return playerIDs
+	  	playerIDs = []
+		Hash(@players).forEach (player) ->
+			console.log 'a'
+			console.log player
+			playerIDs.push player.id
+			return playerIDs
 	createPoint: (player_id, point) ->
 		@activityData.newPoint player_id, point
 	deletePoint: (player_id, point, callback) ->
@@ -201,7 +203,6 @@ class ContouringActivityData
 		@redisClient = redis.createClient config.redis.port, config.redis.server
 		@redisClient.select config.redis.db
 	newPoint: (player_id, point) ->
-		console.log JSON.stringify point
 		client = @redisClient
 		thisID = @id
 		client.sismember 'activity:'+thisID+':layer:'+point.layer+':player:'+player_id+':points', JSON.stringify({point}), (err, ismember) ->
