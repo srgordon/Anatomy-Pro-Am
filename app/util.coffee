@@ -155,12 +155,10 @@ class ContouringActivity
 	removePlayer: (player) ->
 		@players[player] = null
 	getPlayers: () ->
-	  	playerIDs = []
+		playerIDs = []
 		Hash(@players).forEach (player) ->
-			console.log 'a'
-			console.log player
 			playerIDs.push player.id
-			return playerIDs
+		return playerIDs
 	createPoint: (player_id, point) ->
 		@activityData.newPoint player_id, point
 	deletePoint: (player_id, point, callback) ->

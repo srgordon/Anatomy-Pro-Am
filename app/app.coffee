@@ -41,7 +41,7 @@ exports.createServer = (app) ->
 			emit.apply emit, ['setCurrentCase', case_number, returnedValue]
 			sessionManager.publishToAll 'PlayerStartedCase', thisPlayer, returnedValue
 		@getCase = (activity_id) ->
-			return activityManager.current[id].getCaseID
+			return activityManager.current[activity_id].getCaseID
 		@pointColored = (activity_id, player_id, points) ->
 			players = activityManager.current[activity_id].getPlayers()
 			for point in points
@@ -68,6 +68,7 @@ exports.createServer = (app) ->
 		@done = (activity_id, player) ->
 			players = activityManager.current[activity_id].getPlayers()
 			sessionManager.publishToActivity players, 'playerIsDone', player
+			console.log players, player
 			activityManager.current[activity_id].playerDone player, (result) ->
 				if result == true
 					sessionManager.publishToActivity players, 'everyoneIsDone', player
