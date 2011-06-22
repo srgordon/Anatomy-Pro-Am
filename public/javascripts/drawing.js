@@ -29,6 +29,7 @@ components.drawing = function(){
 			'click #send_chat':'sendChat',
 			'keyup #type':'sendChat',
 			'click #score_button':'scoreButton',
+			'click #individual_score_close':'closeIndiScore',
 			"click #done_button": "doneButton",
 			"click #accept_invite":"pagerAcceptInvite",
 			"click #decline_invite":"pagerDeclineInvite",
@@ -138,14 +139,8 @@ components.drawing = function(){
 					this.$('#score_button').removeClass('red_button_disabled');
 				}
 			}.bind(this));
-			em.on('scoreEveryone', function (player){
-				if (player.current_case_id == me.get('current_case_id')){
-					this.score_card_template = _.template($('#score_card_template').html());
-					$("#score_popup_tag").html(this.score_card_template());
-					// moved to actual scoring routine for now..  $("#score_popup_tag").show();
-					
-					this.done();
-				}
+			em.on('allScores', function (scores){
+				this.showAllScores(scores);
 			}.bind(this));
 			em.on('setColor', function (color){
 				me.set({player_color:color.payload},{silent: true});
@@ -342,7 +337,7 @@ components.drawing = function(){
 		},
 		goBack: function(e) {
 			e.preventDefault();
-			remote.leftActivity (me.get('current_case_id'), me);
+			//remote.leftActivity (me.get('current_case_id'), me);
 			me.set({current_case_id:0},{silent:true});
 			view.computer = null;
 			this.removeAllListeners();
@@ -891,163 +886,176 @@ components.drawing = function(){
 		scoreButton: function(e){
 			e.preventDefault();
 			if (this.everyoneDone){
-				remote.submitScore(me.get('current_case_id'), me);
+				//get everyone's scores.
+				remote.getScores(me.get('current_case_id'), me);
 			}else{
 				//do nothing
 			}
 			
 		},
+		closeIndiScore: function (e) {
+			e.preventDefault();
+			$('#individual_score_card').removeClass('individual_score_extend');
+			$('#individual_score_card').addClass('individual_score_retract');
+		},
 		doneButton: function (e){
 			e.preventDefault();
 			this.locked = !this.locked;
 			if (this.locked){
-				remote.done(me.get('current_case_id'), me);
+				//remote.done(me.get('current_case_id'), me);
 				this.getColorPointsForLayerAndPlayer(true);
+				this.done();
 				$('#done_text').text('UNLOCK');
 			}else{
+				$('#individual_score_card').removeClass('individual_score_extend');
+				$('#individual_score_card').addClass('individual_score_retract');
 				remote.notDone(me.get('current_case_id'),me);
 				$('#done_text').text("I'M DONE");
 			}
 		},
 		done: function() {
-			
+			//Show small done display
 			this.clean();
 			var self = this;
 			var totalScore = 0;
 			var totalPlayers = 0;
-			online_friends.each(function(friend){
-				if (friend.get('current_case_id') == me.get('current_case_id')){
-					totalPlayers++;
-					var nameString = '<li><span style="color:#' + friend.get("player_color") + '">' + friend.get("name") + '</span></li>';
-					var scoreString = '<li><span class="des_cancer" id="hit_' + friend.get("id") + '"> 0 </span> - <span class="des_healthy" id="missed_' + friend.get("id") + '">0</span> = <span id="total_' + friend.get("id") + '" style="color:#' + friend.get('player_color') + '">0</span></li>';
-					$("#score_names_ul").append(nameString);
-					$("#score_number_ul").append(scoreString);
-				}
-			});
 			
-			online_friends.each(function(friend){
-				if (friend.get('current_case_id') == me.get('current_case_id')){
-					var color = friend.get('player_color');
-					var context = this.ctxArr[friend.get('id')];
-					var imageData=context.getImageData(0, 0, this.canvas.width/2, this.canvas.height/2);
-					var pix = imageData.data;
-					var redVal = (parseInt(color.substr(0,2),16));
-					var greenVal = (parseInt(color.substr(2,2),16));
-					var blueVal = (parseInt(color.substr(4,2),16));
-					
-					console.log("Before bwcc");
-					console.log(new Date());
-					//var typeMatrix = this.bwcc(imageData);
-					var newImageData = this.blobify(imageData);
-					//Uninvert the blobify
-					console.log("After bwcc");
-					console.log(new Date());
-					
-					for(var y = 0; y < newImageData.height; y++){
-						for(var x = 0; x < newImageData.width; x++){
-							if(newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 3] == 0){
-								newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 0]=redVal;
-								newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 1]=greenVal;
-								newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 2]=blueVal;
-								newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 3]=100;
-							}else if( (newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 0] == 0)	
-									&& (newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 1] == 0)	
-									&& (newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 2] == 0)){	
-								newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 3]=0;	
-							}
+			var friend = me;
+			if (friend.get('current_case_id') == me.get('current_case_id')){
+				var color = friend.get('player_color');
+				var context = this.ctxArr[friend.get('id')];
+				var imageData=context.getImageData(0, 0, this.canvas.width/2, this.canvas.height/2);
+				var pix = imageData.data;
+				var redVal = (parseInt(color.substr(0,2),16));
+				var greenVal = (parseInt(color.substr(2,2),16));
+				var blueVal = (parseInt(color.substr(4,2),16));
+				
+				console.log("Before bwcc");
+				console.log(new Date());
+				//var typeMatrix = this.bwcc(imageData);
+				var newImageData = this.blobify(imageData);
+				//Uninvert the blobify
+				console.log("After bwcc");
+				console.log(new Date());
+				
+				for(var y = 0; y < newImageData.height; y++){
+					for(var x = 0; x < newImageData.width; x++){
+						if(newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 3] == 0){
+							newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 0]=redVal;
+							newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 1]=greenVal;
+							newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 2]=blueVal;
+							newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 3]=100;
+						}else if( (newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 0] == 0)	
+								&& (newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 1] == 0)	
+								&& (newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 2] == 0)){	
+							newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 3]=0;	
 						}
 					}
-					context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-					context.putImageData(newImageData, 0, 0);
-					
-					console.log("Before score");
-					console.log(new Date());
-					
-					
-					var targetHit = 0;
-					var targetMissed = 0;
-					var healthyHit = 0;
-					var healthyMissed = 0;
-					
-					
-					var goalArrX = new Array();
-					var goalArrY = new Array();
-					var healthyArrX = new Array();
-					var healthyArrY = new Array();
-					
-					
-					
-					if(this.caseNum == 1){
-						$("#score_popup_tag").show();
-						goalArrX[0] = 142;
-						goalArrY[0] = 57;
-						goalArrX[1] = 190;
-						goalArrY[1] = 63;
-						goalArrX[2] = 242;
-						goalArrY[2] = 69;
-						goalArrX[3] = 561;
-						goalArrY[3] = 366;
-						goalArrX[4] = 448;
-						goalArrY[4] = 347;
-						goalArrX[5] = 662;
-						goalArrY[5] = 68;
-						goalArrX[6] = 660;
-						goalArrY[6] = 164;
-						goalArrX[7] = 473;
-						goalArrY[7] = 196;
-						goalArrX[8] = 411;
-						goalArrY[8] = 255;
-						goalArrX[9] = 359;
-						goalArrY[9] = 289;
-						
-						healthyArrX[0] = 42;
-						healthyArrY[0] = 57;
-						healthyArrX[1] = 190;
-						healthyArrY[1] = 263;
-						healthyArrX[2] = 442;
-						healthyArrY[2] = 69;
-						healthyArrX[3] = 541;
-						healthyArrY[3] = 266;
-						healthyArrX[4] = 148;
-						healthyArrY[4] = 147;
-						healthyArrX[5] = 612;
-						healthyArrY[5] = 100;
-						healthyArrX[6] = 60;
-						healthyArrY[6] = 264;
-						healthyArrX[7] = 73;
-						healthyArrY[7] = 196;
-					}
-					if(this.caseNum == 2){
-						$("#thanks_for_playing").show();	
-					}
-					
-					for(var c = 0; c < goalArrX.length; c++){
-						if((newImageData.data[((goalArrY[c]*(newImageData.width*4)) + (goalArrX[c]*4)) + 3]) == 100)
-							targetHit++;
-						else
-							targetMissed++;
-					}
-					
-					for(var c = 0; c < healthyArrX.length; c++){
-						if((newImageData.data[((healthyArrY[c]*(newImageData.width*4)) + (healthyArrX[c]*4)) + 3]) == 100)
-							healthyHit++;
-						else
-							healthyMissed++;
-					}
-					//totalScore += (scoreHit - (scoreMissed * .25));
-					$('#hit_' + friend.get("id")).text(targetHit * 10);
-					$('#missed_' + friend.get("id")).text((healthyHit / 4) * 10);
-					$('#total_' + friend.get("id")).text((targetHit * 10) - ((healthyHit / 4) * 10));
-					totalScore += (targetHit * 10) - ((healthyHit / 4) * 10);
-					console.log("After score");
-					console.log(new Date());
-					
-					
-					//alert("Your score " + targetHit + " out of: " + (targetHit+targetMissed) + " with " + healthyHit + " wrong regions identified");
 				}
-			}.bind(this));
+				context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+				context.putImageData(newImageData, 0, 0);
+				
+				console.log("Before score");
+				console.log(new Date());
+				
+				
+				var targetHit = 0;
+				var targetMissed = 0;
+				var healthyHit = 0;
+				var healthyMissed = 0;
+				
+				
+				var goalArrX = new Array();
+				var goalArrY = new Array();
+				var healthyArrX = new Array();
+				var healthyArrY = new Array();
+				
+				
+				
+				if(this.caseNum == 1){
+					//$("#score_popup_tag").show();
+					goalArrX[0] = 142;
+					goalArrY[0] = 57;
+					goalArrX[1] = 190;
+					goalArrY[1] = 63;
+					goalArrX[2] = 242;
+					goalArrY[2] = 69;
+					goalArrX[3] = 561;
+					goalArrY[3] = 366;
+					goalArrX[4] = 448;
+					goalArrY[4] = 347;
+					goalArrX[5] = 662;
+					goalArrY[5] = 68;
+					goalArrX[6] = 660;
+					goalArrY[6] = 164;
+					goalArrX[7] = 473;
+					goalArrY[7] = 196;
+					goalArrX[8] = 411;
+					goalArrY[8] = 255;
+					goalArrX[9] = 359;
+					goalArrY[9] = 289;
+					
+					healthyArrX[0] = 42;
+					healthyArrY[0] = 57;
+					healthyArrX[1] = 190;
+					healthyArrY[1] = 263;
+					healthyArrX[2] = 442;
+					healthyArrY[2] = 69;
+					healthyArrX[3] = 541;
+					healthyArrY[3] = 266;
+					healthyArrX[4] = 148;
+					healthyArrY[4] = 147;
+					healthyArrX[5] = 612;
+					healthyArrY[5] = 100;
+					healthyArrX[6] = 60;
+					healthyArrY[6] = 264;
+					healthyArrX[7] = 73;
+					healthyArrY[7] = 196;
+				}
+				if(this.caseNum == 2){
+					//$("#thanks_for_playing").show();	
+				}
+				
+				for(var c = 0; c < goalArrX.length; c++){
+					if((newImageData.data[((goalArrY[c]*(newImageData.width*4)) + (goalArrX[c]*4)) + 3]) == 100)
+						targetHit++;
+					else
+						targetMissed++;
+				}
+				
+				for(var c = 0; c < healthyArrX.length; c++){
+					if((newImageData.data[((healthyArrY[c]*(newImageData.width*4)) + (healthyArrX[c]*4)) + 3]) == 100)
+						healthyHit++;
+					else
+						healthyMissed++;
+				}
+				//totalScore += (scoreHit - (scoreMissed * .25));
+				$('#hit_' + friend.get("id")).text(targetHit * 10);
+				$('#missed_' + friend.get("id")).text((healthyHit / 4) * 10);
+				$('#total_' + friend.get("id")).text((targetHit * 10) - ((healthyHit / 4) * 10));
+				totalScore += (targetHit * 10) - ((healthyHit / 4) * 10);
+				console.log("After score");
+				console.log(new Date());
+				
+				remote.done(me.get('current_case_id'), me, targetHit, healthyHit);
+				var nameString = 'Individual Score for: <span style="color:#' + friend.get("player_color") + '">'+friend.get('name')+'</span>'
+				var scoreString = '<span class="des_cancer">' + (targetHit * 10) + '</span> - <span class="des_healthy">'+ ((healthyHit / 4) * 10) +'</span> = <span style="color:#' + friend.get("player_color") + '">'+ ((targetHit * 10) - (healthyHit / 4) * 10)+'</span>'
+				$('#individual_score_name').html(nameString);
+				$('#individual_score_score').html(scoreString);				
+				$('#individual_score_card').removeClass('individual_score_retract');
+				$('#individual_score_card').removeClass('individual_score_closed');
+				$('#individual_score_card').addClass('individual_score_extend');
+
+				//alert("Your score " + targetHit + " out of: " + (targetHit) + " with " + healthyHit + " wrong regions identified");
+			}
 			var t = 0;
 			$("#numbers_total_ul").append('<li>' + (totalScore / totalPlayers) + '</li>');
+		},
+		showAllScores: function (scores){
+			console.log (scores);
+			this.score_card_template = _.template($('#score_card_template').html());
+			$("#score_popup_tag").html(this.score_card_template());
+			$("#score_popup_tag").show();
 		},
 		expandInfo: function (e) { //added to allow current case info roll down
 			e.preventDefault();
@@ -1167,12 +1175,12 @@ components.drawing = function(){
 			}
 		},
 		setChatHistory: function(data) {
-		  var chatEl = $('#chat_window')[0];
-      _.each(data.payload, function(message) {
-        var player = online_friends.filter(function(chatFriend) { return chatFriend.get('id') === message.player });
-        $('#chat_window').append('<div class="chat_msg_con"><span class="chat_person" style="color: #'+player[0].get('player_color')+'; font-weight: bold;">'+player[0].get('name')+':</span><span class="chat_message"> '+message.message+'</span></div>');
-        chatEl.scrollTop = chatEl.scrollHeight;
-      });
+			var chatEl = $('#chat_window')[0];
+			_.each(data.payload, function(message) {
+				var player = online_friends.filter(function(chatFriend) { return chatFriend.get('id') === message.player });
+				$('#chat_window').append('<div class="chat_msg_con"><span class="chat_person" style="color: #'+player[0].get('player_color')+'; font-weight: bold;">'+player[0].get('name')+':</span><span class="chat_message"> '+message.message+'</span></div>');
+				chatEl.scrollTop = chatEl.scrollHeight;
+			});
 		},
 		showPager: function (b){
 			if(b){

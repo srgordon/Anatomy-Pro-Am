@@ -98,9 +98,9 @@ server.all '/friends/:activity_id?', (req, res) ->
 			avatar: "http://graph.facebook.com/" + player.fbUser.id + "/picture", 
 			layer_enabled: false,
 			current_case_id: player.currentActivity,
-			isDone: false;
-			everyoneDone: false;
-			hasSubmitted: false;
+			isDone: false,
+			everyoneDone: false,
+			hasSubmitted: false
 			})
 	res.send(JSON.stringify(output))
 

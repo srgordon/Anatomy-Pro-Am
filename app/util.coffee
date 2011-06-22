@@ -171,24 +171,34 @@ class ContouringActivity
 	    @activityData.newChat player_id, message    
 	getChatHistoryForActivity: (callback) ->
 	    return @activityData.getChatHistoryForActivity callback
-	playerDone: (player, callback) ->
+	playerDone: (player, tumorHit, healthyHit, callback) ->
 		@players[player.id].isDone = true
+		@players[player.id].tumorHit = tumorHit
+		@players[player.id].healthyHit = healthyHit
 		result = true;
 		_.each @players, (player) ->
 			if player.isDone != true
 				result = false;
 		callback result
-	submitScore: (player, callback) ->	
+	getScores: (player, callback) ->
+		returned = {}
+		returned['result'] = false
+		returned['scores'] = {}
 		@players[player.id].requestsScore = true
 		scoreResult = true;
 		doneResult = true
 		_.each @players, (player) ->
+			returned['scores'][player.id] = {}
+			returned['scores'][player.id]['id'] = player.id
+			returned['scores'][player.id]['tumorHit'] = player.tumorHit
+			returned['scores'][player.id]['healthyHit'] = player.healthyHit
 			if player.requestsScore != true
 				scoreResult = false;
 		_.each @players, (player) ->
 			if player.isDone != true
 				doneResult = false;
-		callback doneResult && scoreResult
+		returned.result = doneResult && scoreResult
+		callback returned
 	playerNotDone: (player) ->
 		@players[player.id].isDone = false
 		@players[player.id].scoreResult = false

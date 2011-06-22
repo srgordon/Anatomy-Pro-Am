@@ -19,7 +19,7 @@ flush = util.flushDatabase
 exports.createServer = (app) ->
 	client = DNode (client, conn) ->
 		@login = (pw, emit) ->
-			if pw is 'tumor'
+			if pw is '' #tumor
 				emit.apply emit, ['Continue']
 			if pw is 'AdminPanel33!'
 				emit.apply emit, ['AdminPanel']
@@ -65,24 +65,24 @@ exports.createServer = (app) ->
 		@getColoredPointsForThisLayerAndPlayer = (activity_id, requester_id, player, layer, emit) ->
 			activityManager.current[activity_id].getPointsForPlayer layer, player, (points) ->
 				emit.apply emit, ['setColoredPointsForThisLayer', {player: player, payload: points} ]
-		@done = (activity_id, player) ->
+		@done = (activity_id, player, tumorHit, healthyHit) ->
 			players = activityManager.current[activity_id].getPlayers()
 			sessionManager.publishToActivity players, 'playerIsDone', player
 			console.log players, player
-			activityManager.current[activity_id].playerDone player, (result) ->
+			activityManager.current[activity_id].playerDone player, tumorHit, healthyHit, (result) ->
 				if result == true
 					sessionManager.publishToActivity players, 'everyoneIsDone', player
 		@notDone = (activity_id, player) ->
 			players = activityManager.current[activity_id].getPlayers()
 			activityManager.current[activity_id].playerNotDone player
 			sessionManager.publishToActivity players, 'playerNotDone', player
-		@submitScore = (activity_id, player) ->
+		@getScores = (activity_id, player) ->
 			players = activityManager.current[activity_id].getPlayers()
 			sessionManager.publishToActivity players, 'playerSubmitted', player
-			activityManager.current[activity_id].submitScore player, (result) ->
-				if result == true
-					sessionManager.publishToActivity players, 'scoreEveryone', player
-					console.log 'score everyone'
+			activityManager.current[activity_id].getScores player, (returned) ->
+				console.log returned
+				if returned.result == true
+					sessionManager.publishToActivity players, 'allScores', returned
 		@joinActivity = (activity_id, player) ->
 			activityManager.current[activity_id].addPlayer(player)
 			sessionManager.setActivity player, activity_id
@@ -108,11 +108,11 @@ exports.createServer = (app) ->
 				sessionManager.sessions_for_facebook_id[player_id].fbUser.player_color = color
 				emit.apply emit, ['setColor', {payload:color}]
 		@leftActivity = (activity_id, player) ->
-			activityManager.current[activity_id].removePlayer(player.id);
+			activityManager.current[activity_id].removePlayer player.id 
 			sessionManager.setActivity player, 0
 			players = activityManager.current[activity_id].getPlayers()
 			sessionManager.publishToActivity players, 'playerLeft', player
-			
+
 		# dnode/coffeescript fix:
 		@version = config.version
 	.listen {
