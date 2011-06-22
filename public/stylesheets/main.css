@@ -466,6 +466,7 @@ height:30px; width:30px;}
 
 /* ---------------SPLASH SCREEN ---------------------------------*/
 #password_bar{
+
 	display:block;
 }
 #game_container_splash_screen{height:555px; width:744px; margin:0 auto; background:url(../images/background_tile.png);}

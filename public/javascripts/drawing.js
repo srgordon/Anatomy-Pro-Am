@@ -139,8 +139,10 @@ components.drawing = function(){
 					this.$('#score_button').removeClass('red_button_disabled');
 				}
 			}.bind(this));
+
 			em.on('allScores', function (scores){
 				this.showAllScores(scores);
+
 			}.bind(this));
 			em.on('setColor', function (color){
 				me.set({player_color:color.payload},{silent: true});
@@ -951,6 +953,7 @@ components.drawing = function(){
 							newImageData.data[((y*(newImageData.width*4)) + (x*4)) + 3]=0;	
 						}
 					}
+
 				}
 				context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 				context.putImageData(newImageData, 0, 0);
@@ -1011,6 +1014,7 @@ components.drawing = function(){
 					healthyArrY[6] = 264;
 					healthyArrX[7] = 73;
 					healthyArrY[7] = 196;
+
 				}
 				if(this.caseNum == 2){
 					//$("#thanks_for_playing").show();	
