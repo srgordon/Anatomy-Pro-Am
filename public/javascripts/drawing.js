@@ -1031,15 +1031,15 @@ components.drawing = function(){
 				}
 				//totalScore += (scoreHit - (scoreMissed * .25));
 				$('#hit_' + friend.get("id")).text(targetHit * 10);
-				$('#missed_' + friend.get("id")).text((healthyHit / 4) * 10);
-				$('#total_' + friend.get("id")).text((targetHit * 10) - ((healthyHit / 4) * 10));
-				totalScore += (targetHit * 10) - ((healthyHit / 4) * 10);
+				$('#missed_' + friend.get("id")).text((healthyHit) * 10);
+				$('#total_' + friend.get("id")).text((targetHit * 10) - ((healthyHit * 10)));
+				totalScore += (targetHit * 10) - ((healthyHit * 10));
 				console.log("After score");
 				console.log(new Date());
 				
 				remote.done(me.get('current_case_id'), me, targetHit, healthyHit);
 				var nameString = 'Individual Score for: <span style="color:#' + friend.get("player_color") + '">'+friend.get('name')+'</span>'
-				var scoreString = '<span class="des_cancer">' + (targetHit * 10) + '</span> - <span class="des_healthy">'+ ((healthyHit / 4) * 10) +'</span> = <span style="color:#' + friend.get("player_color") + '">'+ ((targetHit * 10) - (healthyHit / 4) * 10)+'</span>'
+				var scoreString = '<span class="des_cancer">' + (targetHit * 10) + '</span> - <span class="des_healthy">'+ ((healthyHit) * 10) +'</span> = <span style="color:#' + friend.get("player_color") + '">'+ ((targetHit * 10) - (healthyHit * 10))+'</span>'
 				$('#individual_score_name').html(nameString);
 				$('#individual_score_score').html(scoreString);				
 				$('#individual_score_card').removeClass('individual_score_retract');
@@ -1051,10 +1051,21 @@ components.drawing = function(){
 			var t = 0;
 			$("#numbers_total_ul").append('<li>' + (totalScore / totalPlayers) + '</li>');
 		},
-		showAllScores: function (scores){
-			console.log (scores);
+		showAllScores: function (scoreList){
+			var totalPlayers = 0;
+			var totalScore = 0;
+			console.log (scoreList);
 			this.score_card_template = _.template($('#score_card_template').html());
 			$("#score_popup_tag").html(this.score_card_template());
+			_.each(scoreList.scores, function (player) {
+				totalPlayers++;
+				var nameString = '<li><span style="color:#' + online_friends.get(player.id).get("player_color") + '">' + online_friends.get(player.id).get("name") + '</span></li>';
+				var scoreString = '<li><span class="des_cancer">'+ player.tumorHit +'</span> - <span class="des_healthy">'+ player.healthyHit+'</span> = <span style="color:#' + online_friends.get(player.id).get('player_color') + '">' + (player.tumorHit - player.healthyHit) + '</span></li>';
+				$("#score_names_ul").append(nameString);
+				$("#score_number_ul").append(scoreString);
+				totalScore += (player.tumorHit - player.healthyHit);
+			});
+			$("#numbers_total_ul").append('<li>' + (totalScore / totalPlayers) + '</li>');
 			$("#score_popup_tag").show();
 		},
 		expandInfo: function (e) { //added to allow current case info roll down
