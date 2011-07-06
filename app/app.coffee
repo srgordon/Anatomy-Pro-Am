@@ -19,7 +19,7 @@ flush = util.flushDatabase
 exports.createServer = (app) ->
 	client = DNode (client, conn) ->
 		@login = (pw, emit) ->
-			if pw is ''
+			if pw is 'tumor'
 				emit.apply emit, ['Continue']
 			if pw is 'AdminPanel33!'
 				emit.apply emit, ['AdminPanel']
@@ -92,6 +92,17 @@ exports.createServer = (app) ->
 			activityManager.current[activity_id].addChatMessage player_id, message
 			players = activityManager.current[activity_id].getPlayers()
 			sessionManager.publishToActivity players, 'newChat', player_id, layer, message
+		
+		@getGoalPointsForCase = (activity_id, emit) ->
+			activityManager.current[activity_id].getGoalPointsForCase (goalPoints) ->
+				emit.apply emit, ['setGoalPointsForCase', {payload: goalPoints}]
+		@getScoreForCase = (activity_id, player_id, width, height, emit) ->
+			activityManager.current[activity_id].getScoreForCase player_id, width, height, (caseScore) ->
+				emit.apply emit, ['setScoreForCase', {payload: caseScore}]
+
+
+		@setGoalPointsForCase = (activity_id, goalPoints) ->
+			activityManager.current[activity_id].setGoalPointsForCase goalPoints
 		@getChatHistoryForActivity = (activity_id, emit) ->
 			activityManager.current[activity_id].getChatHistoryForActivity (chats) ->
 				emit.apply emit, ['setChatHistory', {payload: chats}]

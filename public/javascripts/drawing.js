@@ -516,6 +516,7 @@ components.drawing = function(){
 			
 			if(this.isErasing){
 				document.body.style.cursor='url(images/eraser_cursor-2.cur)';
+
 			}else{
 				document.body.style.cursor='url(images/brush_cursor-2.cur)';
 				
@@ -1034,16 +1035,16 @@ components.drawing = function(){
 						healthyMissed++;
 				}
 				//totalScore += (scoreHit - (scoreMissed * .25));
-				$('#hit_' + friend.get("id")).text(targetHit * 10);
-				$('#missed_' + friend.get("id")).text((healthyHit) * 10);
-				$('#total_' + friend.get("id")).text((targetHit * 10) - ((healthyHit * 10)));
-				totalScore += (targetHit * 10) - ((healthyHit * 10));
+				$('#hit_' + friend.get("id")).text(targetHit );
+				$('#missed_' + friend.get("id")).text((healthyHit) );
+				$('#total_' + friend.get("id")).text((targetHit) - ((healthyHit)));
+				totalScore += (targetHit) - ((healthyHit));
 				console.log("After score");
 				console.log(new Date());
 				
 				remote.done(me.get('current_case_id'), me, targetHit, healthyHit);
 				var nameString = 'Individual Score for: <span style="color:#' + friend.get("player_color") + '">'+friend.get('name')+'</span>'
-				var scoreString = '<span class="des_cancer">' + (targetHit * 10) + '</span> - <span class="des_healthy">'+ ((healthyHit) * 10) +'</span> = <span style="color:#' + friend.get("player_color") + '">'+ ((targetHit * 10) - (healthyHit * 10))+'</span>'
+				var scoreString = '<span class="des_cancer">' + (targetHit ) + '</span> - <span class="des_healthy">'+ ((healthyHit)) +'</span> = <span style="color:#' + friend.get("player_color") + '">'+ ((targetHit) - (healthyHit))+'</span>'
 				$('#individual_score_name').html(nameString);
 				$('#individual_score_score').html(scoreString);				
 				$('#individual_score_card').removeClass('individual_score_retract');

@@ -468,6 +468,7 @@ height:30px; width:30px;}
 #password_bar{
 
 	display:block;
+	height:30px; width:200px; float:left; border: 0px solid #490f0f; font-size:30px; padding:4px; text-align:center; margin:5px 0 0 275px;
 }
 #game_container_splash_screen{height:555px; width:744px; margin:0 auto; background:url(../images/background_tile.png);}
 #splash_logo{height:115px; width:453px; background:url(../images/ap-a_logo_title_screen.png); margin:150px 0 0 150px; float:left;}
