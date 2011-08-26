@@ -11,6 +11,8 @@ fbhelper = require './fbhelper'
 app = require './app/app'
 Hash = require 'hashish@0.0.2'
 flush = app.flush
+Exceptional = require('./exceptional/lib/exceptional').Exceptional
+Exceptional.API_KEY = '8ef29239db92567998654aa90c4086b6a748ffde'
 
 ## server instance
 server = express.createServer()
@@ -33,8 +35,16 @@ server.use browserify {
 	#filter: require('jsmin').jsmin
 }
 
+process.addListener 'uncaughtException', (err) ->
+    Exceptional.handle err
+
+
 ## RPC client
 app.createServer server
+
+server.get '/genError', (req, res) ->
+	Exceptional.handle new Error('forced error')
+	
 server.on 'error', (err) ->
 	console.log err
 	
@@ -98,9 +108,9 @@ server.all '/friends/:activity_id?', (req, res) ->
 			avatar: "http://graph.facebook.com/" + player.fbUser.id + "/picture", 
 			layer_enabled: false,
 			current_case_id: player.currentActivity,
-			isDone: false;
-			everyoneDone: false;
-			hasSubmitted: false;
+			isDone: false,
+			everyoneDone: false,
+			hasSubmitted: false
 			})
 	res.send(JSON.stringify(output))
 

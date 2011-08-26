@@ -45,7 +45,8 @@ components.drawing = function(){
 		initialize: function(caseNum) {
 			console.log (caseNum);
 			window.dThis=this;
-			_.bindAll(this, 'render', 'newCursorPosition');		
+			_.bindAll(this, 'render', 'newCursorPosition');
+			
 			this.zoom = 1;
 			this.locked = false;
 			this.chatExpanded = false;
@@ -87,15 +88,25 @@ components.drawing = function(){
 				self.ctxArr[playerID].lineCap = "butt"; 
 				self.index++;
 			});
-			this.canvas = $('canvas')[11];
+			
+			self.canvasArr["goal"] = ($('canvas')[9-self.index]);
+			self.ctxArr["goal"] = self.canvasArr["goal"].getContext("2d");
+			
+			
+			this.canvas = $('canvas')[10];
 			this.ctx = this.canvas.getContext("2d");
 			this.isErasing = false;
+			
+			
+		
+		
+			
 			this.ctxArr[me.id].clearRect(0, 0, this.canvas.width, this.canvas.height);
 			this.canvasArr[me.id].width = this.canvasArr[me.id].width;
 
 			/* Retreive chat messages */
 			remote.getChatHistoryForActivity(me.get('current_case_id'), emit);
-						
+			
 			/* Retrieve my color */
 			remote.getColor(me.get('current_case_id'), me.get('id'), emit);
 			
@@ -106,15 +117,12 @@ components.drawing = function(){
 			em.on('playerLeft', function (player_id){
 				online_friends.fetch();
 			});
-			
 			em.on('playerIsDone', function (player){
 					online_friends.get(player.id).set({isDone:true});
 			}.bind(this));
-			
 			em.on('playerSubmitted', function (player){
 					online_friends.get(player.id).set({hasSubmitted:true});
 			}.bind(this));
-			
 			em.on('playerNotDone', function (player){
 				if (player.current_case_id == me.get('current_case_id')){
 					online_friends.get(player.id).set({isDone:false});
@@ -124,7 +132,6 @@ components.drawing = function(){
 					this.$('#score_button').addClass('red_button_disabled');
 				}
 			}.bind(this));
-			
 			em.on('everyoneIsDone', function (player){
 				if (player.current_case_id == me.get('current_case_id')){
 					this.everyoneDone = true;
@@ -142,7 +149,6 @@ components.drawing = function(){
 				online_friends.get(me.get('id')).set({player_color:color.payload},{silent: true});
 				online_friends.fetch();
 			});
-			
 			em.on('pointColored', function (player_id, points) {
 				if (online_friends.get(player_id).get('layer_enabled')){
 					if(player_id != me.id)
@@ -151,6 +157,7 @@ components.drawing = function(){
 			}.bind(this));
 			
 			em.on('canvasCleared', function (player_id, player_layer) {
+				//this.ctxArr[ctxKey].clearRect(0, 0, this.canvas.width, this.canvas.height);
 				if (layer == player_layer){
 					if (this.ctxArr[player_id] != null && this.ctxArr[player_id] != undefined){
 						this.ctxArr[player_id].clearRect(0, 0, this.canvas.width, this.canvas.height);	
@@ -162,38 +169,45 @@ components.drawing = function(){
 				if (online_friends.get(player_id).get('layer_enabled')){
 					if(player_id != me.id)
 						this.localEraseEvent(points,  this.ctxArr[player_id]);	
-				}	
+				}
+				
 			}.bind(this));
 			
-			if(false){ 
-						self.setGoalPointsForCase('images/cases/case1/perfect3F.png', 3);
-					}
 			
+			em.on('mouseDownErase', function(player_id, layer) {
+				if (online_friends.get(player_id).get('layer_enabled')){
+					if(player_id != me.id)
+						this.ctxArr[player_id].globalCompositeOperation = "destination-out"; //Needed to erase 	
+				}
+				
+			}.bind(this));
 			
-			
-			em.on('setScoreForCase', function(data) {
-				var targetHit = data.payload.tumorHit;
-				var healthyHit = data.payload.healthyHit;
-				targetHit = Clamp(targetHit, 0, 100);
-				healthyHit = Clamp(healthyHit, 0, 100) / 4;
-				var friend = me;
-				var nameString = 'Individual Score for: <span style="color:#' + friend.get("player_color") + '">'+friend.get('name')+'</span>'
-				var scoreString = '<span class="des_cancer">' + (targetHit).toFixed(0) + '</span> - <span class="des_healthy">'+ ((healthyHit)).toFixed(0) +'</span> = <span style="color:#' + friend.get("player_color") + '">'+ ((targetHit) - (healthyHit)).toFixed(0) +'</span>'
-				$('#individual_score_name').html(nameString);
-				$('#individual_score_score').html(scoreString);				
-				$('#individual_score_card').removeClass('individual_score_retract');
-				$('#individual_score_card').removeClass('individual_score_closed');
-				$('#individual_score_card').addClass('individual_score_extend');
+			em.on('mouseUpErase', function(player_id, layer) {
+				if (online_friends.get(player_id).get('layer_enabled')){
+					if(player_id != me.id){
+						
+					/*	var imageData=this.ctxArr[player_id].getImageData(0, 0, this.canvas.width*this.zoom, this.canvas.height*this.zoom);
+						var pix = imageData.data;
+						for(var y = 0; y <imageData.height; y++)
+							for(var x = 0; x < imageData.width; x++)
+								if(pix[((y*(imageData.width*4)) + (x*4)) + 0]==0 
+								&& pix[((y*(imageData.width*4)) + (x*4)) + 1]==0
+								&& pix[((y*(imageData.width*4)) + (x*4)) + 2]==0)
+								pix[((y*(imageData.width*4)) + (x*4)) + 3]=0;
 
-				console.log("Score value is");
-				console.log(data.payload);
+						this.ctxArr[player_id].clearRect(0, 0, this.canvas.width, this.canvas.height);
+						this.ctxArr[player_id].putImageData(imageData, 0, 0);
+				*/		this.ctxArr[player_id].globalCompositeOperation = "source-over"; //Needed to erase 
+						
+						
+						
+						
+						}	
+				}
+				
 			}.bind(this));
 			
-			var Clamp = function (v, min, max){
-				if (v>max){v=max;}
-				if (v<min){v=min;}
-				return v;
-			}
+			
 			
 			em.on('setColoredPointsForThisLayer', function(points){
 				if(points) {
@@ -212,7 +226,6 @@ components.drawing = function(){
 						this.colorPoint(pointArr, color,this.ctxArr[points.player]);
 				}
 			}.bind(this));
-
 			//Removed the below function from apps.js, placed here to make it more relevant for the drawing pager.  This will be changed later. 
 			em.on('JoinRequest', function(activity_id, case_number, player_id, player_name, player_avatar) {
 				invitation['activity_id'] = activity_id;
@@ -228,7 +241,8 @@ components.drawing = function(){
 			
 			// event listener for chat
 			em.on('setChatHistory', this.setChatHistory);
-			em.on('newChat', this.receiveChat);			
+			em.on('newChat', this.receiveChat);
+			
 			em.on('newCursorPosition', this.newCursorPosition);
 			
 			/*********************************************/
@@ -238,7 +252,7 @@ components.drawing = function(){
 			if(this.caseNum == 1){
 				var imageRefs = ['/images/cases/case3/1.png', '/images/cases/case3/2.png'];
 				//$('.slider')[0].max = 1;
-				this.$('#scan_container #images')[0].style.top=-9320;
+				this.$('#scan_container #images')[0].style.top=-8540;
 			}else{
 				var imageRefs = ['/images/cases/case1/1.png', '/images/cases/case1/2.png','/images/cases/case1/3.png', '/images/cases/case1/4.png'];
 				this.$('#scan_container #images')[0].style.left=((this.canvas.width/2)-this.$('#scan_container #images')[0].style.width)/4;
@@ -281,8 +295,39 @@ components.drawing = function(){
 			em.removeAllListeners('playerNotDone');
 			em.removeAllListeners('everyoneIsDone');
 			em.removeAllListeners('scoreEveryone');
-			em.removeAllListeners('setGoalPointsForCase');
-			em.removeAllListeners('setScoreForCase');
+		},
+		canvasMerge: function() {
+			/*Function is presently not necessary
+			
+			
+			var pixArr = new Array();
+			var imageData;
+			//console.log("Merging time");
+			for(ctxKey in this.ctxArr){
+				//console.log(this.ctxArr[ctxKey]);
+				imageData=this.ctxArr[ctxKey].getImageData(0, 0, this.canvas.width, this.canvas.height);
+				pixArr.push(imageData.data);
+			}	
+			
+			imageData=this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+			var pix = imageData.data;
+		
+			for(var c = 0; c < (pix.length)/4; c++)
+				for(pixT in pixArr)
+					if(pixT[c*4+3]!=0){
+						pix[c*4+0]=0;
+						pix[c*4+1]=0;
+						pix[c*4+2]=255;
+						pix[c*4+3]=pixT[c*4+3];
+					}
+			
+						this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+						this.ctx.putImageData(imageData, 0, 0);
+				
+				
+				*/
+		
+			
 		},
 		openLeaderboardButton: function(e){
 			e.preventDefault();
@@ -352,7 +397,8 @@ components.drawing = function(){
 				offset = 0;
 				context.moveTo(points[0+offset].x*this.zoom,points[0+offset].y*this.zoom);
 				context.lineTo(points[points.length-1-offset].x*this.zoom,points[points.length-1-offset].y*this.zoom);
-				context.stroke();			
+				context.stroke();
+				
 			}
 		},
 		localEraseEvent: function(points,context){
@@ -363,6 +409,9 @@ components.drawing = function(){
 				context.strokeStyle = "rgba(0,0,0,1)";
 				context.lineWidth = ""+(10);
 				var offset = Math.floor(context.lineWidth/2);
+				//console.log(points.length-1-offset);
+				
+				
 				context.moveTo(points[0+offset].x*this.zoom,points[0+offset].y*this.zoom);
 				context.lineTo(points[points.length-1-offset].x*this.zoom,points[points.length-1-offset].y*this.zoom);
 				context.stroke();
@@ -372,36 +421,64 @@ components.drawing = function(){
 			}
 		},
 		clean: function(){
+				
+			
 				this.getColorPointsForLayerAndPlayer(false);
 		},
 		zoomIn: function(event){
 			event.preventDefault();
 			if(this.zoom == 1){
 				this.zoom = 2;
+				
 				for(arrKey in this.ctxArr){
+					//this.ctxArr[arrKey].scale(2.0,2.0);
 					this.ctxArr[arrKey].clearRect(0, 0, this.canvas.width*this.zoom, this.canvas.height*this.zoom);
 				}		
 				for(arrKey in this.canvasArr){
+					//this.ctxArr[arrKey].scale(2.0,2.0);
 					this.canvasArr[arrKey].width = this.canvasArr[arrKey].width;
-				}							
+				}		
+				
+						
 				this.zoomXOffset = event.clientX-this.canvas.offsetLeft+3;
 				this.zoomYOffset = event.clientY-this.canvas.offsetTop+29;
 				this.getColorPointsForLayerAndPlayer(false);
-				this.$('#scan_container').css('overflow', "scroll");		
+				
+				
+				this.$('#scan_container').css('overflow', "scroll");
+				
+				
+				
 				var halfHeight = Math.floor(this.$('#scan_container').attr('scrollHeight')/4);
-				var halfWidth = Math.floor(this.$('#scan_container').attr('scrollWidth')/4);		
+				var halfWidth = Math.floor(this.$('#scan_container').attr('scrollWidth')/4);
+				
+				
+				//console.log("test time");
+				//console.log(layers);
+				//console.log("lets go!");
+				
+				
+				
 				for(arrKey in layers){
 					layers[arrKey].height *= 2;
+					
+					//layers[arrKey].width *= 2;
+					
 				}
 				if(this.caseNum == 1)
-					this.$('#scan_container #images')[0].style.top=-9300;
+					this.$('#scan_container #images')[0].style.top=-8520;
 				if(this.caseNum == 2)
 					this.$('#scan_container #images')[0].style.left=(this.canvas.width-this.$('#scan_container #images')[0].style.width)/4;
+				//console.log(this.$('#images')[0]);
 				this.$('#scan_container')[0].scrollTop = halfHeight;
 				this.$('#scan_container')[0].scrollLeft = halfWidth;
+				
 				this.$('#scan_container')[0].scrollTop = halfHeight;
 				this.$('#scan_container')[0].scrollLeft = halfWidth;
+				
+				
 				}
+			
 		},
 		zoomOut: function(event){
 			event.preventDefault();
@@ -410,29 +487,39 @@ components.drawing = function(){
 					//this.ctxArr[arrKey].scale(.5,.5);
 					this.ctxArr[arrKey].clearRect(0, 0, this.canvas.width*this.zoom, this.canvas.height*this.zoom);
 				}
+				
 				for(arrKey in this.canvasArr){
 					//this.ctxArr[arrKey].scale(2.0,2.0);
 					this.canvasArr[arrKey].width = this.canvasArr[arrKey].width;
 				}
+				
 				this.zoom = 1;
+			
 				for(arrKey in layers){
 					layers[arrKey].height /= 2;
+					
 				}
 				if(this.caseNum == 1)
-					this.$('#scan_container #images')[0].style.top=-9320;
+					this.$('#scan_container #images')[0].style.top=-8540;
 				if(this.caseNum == 2)
-					this.$('#scan_container #images')[0].style.left=((this.canvas.width/2)-this.$('#scan_container #images')[0].style.width)/4;	
+					this.$('#scan_container #images')[0].style.left=((this.canvas.width/2)-this.$('#scan_container #images')[0].style.width)/4;
+				
+				
 			}
+			
 			this.$('#scan_container')[0].scrollTop = 0;
 			this.$('#scan_container')[0].scrollLeft = 0;
 			this.$('#scan_container').css('overflow', "hidden");
 			this.getColorPointsForLayerAndPlayer(false);
 		},
 		cursorChangeIn: function(event) {
+			
 			if(this.isErasing){
 				document.body.style.cursor='url(images/eraser_cursor-2.cur)';
+
 			}else{
 				document.body.style.cursor='url(images/brush_cursor-2.cur)';
+				
 			} 
 		},
 		cursorChangeOut: function(event) {
@@ -465,22 +552,26 @@ components.drawing = function(){
 		},
 		startLine: function(event) {
 			event.preventDefault();
+			
 				if(this.isErasing){
 					this.ctxArr[me.id].globalCompositeOperation = "destination-out"; //Needed to erase 
+				//	remote.mouseDownErase(me.get('current_case_id'), me.id, layer);
 				}
 				this.isDrawing = true;
 				this.oldX = event.clientX-this.canvas.offsetLeft+3;
 				this.oldY = event.clientY-this.canvas.offsetTop+29;
 				console.log("X: " + this.oldX);
-				console.log("Y: " + this.oldY);	
+				console.log("Y: " + this.oldY);
+			
+			
 		},
 		removeDuplicateElement: function(arrayName){
 		        var newArray=new Array();
 		        for(var i=0; i<arrayName.length;i++ )
 		        {  
 					var j;
-		          	for(j=0; (newArray[j]!=arrayName[i]) && j<newArray.length;j++ );
-		          	if(j==newArray.length) newArray[newArray.length] = arrayName[i];
+		          for(j=0; (newArray[j]!=arrayName[i]) && j<newArray.length;j++ );
+		          if(j==newArray.length) newArray[newArray.length] = arrayName[i];
 		        }
 		        return newArray;
 		},
@@ -491,11 +582,9 @@ components.drawing = function(){
 				var topOffset = Math.floor(this.$('#scan_container')[0].scrollTop/2);
 				//var leftOffset = 0;
 				//var topOffset = 0;
-				console.log (navigator.appCodeName)
 				if(this.isErasing){
 					var xvar = event.clientX-this.canvas.offsetLeft+3;
 					var yvar = event.clientY-this.canvas.offsetTop+29;
-
 					var points = new Array();
 					var delX = (xvar-this.oldX);
 					var delY = (yvar-this.oldY);
@@ -530,8 +619,12 @@ components.drawing = function(){
 					}
 					this.oldX = xvar;
 					this.oldY = yvar;
+			
 					remote.pointErased(me.get('current_case_id'), me.id, points);
 					this.localEraseEvent(points, this.ctxArr[me.id]);
+					
+
+					
 				}else{
 					var xvar = event.clientX-this.canvas.offsetLeft+3;
 					var yvar = event.clientY-this.canvas.offsetTop+29;
@@ -570,8 +663,14 @@ components.drawing = function(){
 					}
 					this.oldX = xvar;
 					this.oldY = yvar;
+					
+					//this.drawLocally(points);
+
 					remote.pointColored(me.get('current_case_id'), me.id, points);
 					this.localDrawEvent(points, me.get('player_color'), this.ctxArr[me.id]);	
+
+				
+					
 				}
 			}
 		},
@@ -604,10 +703,28 @@ components.drawing = function(){
 		},
 		endLine: function(event) {
 			event.preventDefault();
+			
 			if(this.ctxArr[me.id].globalCompositeOperation != "source-over"){
+				
+				
 				this.ctxArr[me.id].globalCompositeOperation = "source-over";
+			/*	var imageData=this.ctxArr[me.id].getImageData(0, 0, this.canvas.width*this.zoom, this.canvas.height*this.zoom);
+				var pix = imageData.data;
+				for(var y = 0; y <imageData.height; y++)
+					for(var x = 0; x < imageData.width; x++)
+						if(pix[((y*(imageData.width*4)) + (x*4)) + 0]==0 
+						&& pix[((y*(imageData.width*4)) + (x*4)) + 1]==0
+						&& pix[((y*(imageData.width*4)) + (x*4)) + 2]==0)
+						pix[((y*(imageData.width*4)) + (x*4)) + 3]=0;
+					
+				this.ctxArr[me.id].clearRect(0, 0, this.canvas.width, this.canvas.height);
+				this.ctxArr[me.id].putImageData(imageData, 0, 0);
+				remote.mouseUpErase(me.get('current_case_id'), me.id, layer);
+			*/
 			}
-			this.isDrawing = false;			
+			
+			this.isDrawing = false;
+			
 		},
 		changeLayer: function(sliderValue) {
 			if(sliderValue != layer){
@@ -649,13 +766,16 @@ components.drawing = function(){
 			var height = imageData.height;
 			var nextLabel = 0;
 			var pix = imageData.data;
+
 			var linked = new Array();
 			var typeMatrix = new Array();
+			
 			console.log("X: " + width + ", Y: " + height);
 			for(var y = 0; y < height; y++){
 				//console.log("y and height is");
 				//console.log(y);
 				for(var x = 0; x < width; x++){
+
 					 if((x>0 && y>0)
 					 && (pix[((y*(width*4)) + ((x-1)*4)) + 3]==pix[((y*(width*4)) + (x*4)) + 3])
 					 && (pix[(((y-1)*(width*4)) + (x*4)) + 3]==pix[((y*(width*4)) + (x*4)) + 3])
@@ -682,12 +802,20 @@ components.drawing = function(){
 			         }
 				}
 			}
+			//console.log("mad it here1");
+			//console.log(linked);
 			for(var y = 0; y < height; y++){
 				for(var x = 0; x < width; x++){
 					var temp = linked[typeMatrix[y*(width) + x]];
+					//console.log(typeMatrix[y*(width) + x]);
 					typeMatrix[y*(width) + x] = this.arrayMin(temp);
+
+					//console.log(linked[typeMatrix[y*(width) + x]].length );
 				}
 			}	
+			//console.log("now here");
+			//console.log(typeMatrix);
+			//console.log("even here");
 			return typeMatrix;
 		},
 			blobify: function(imageData){
@@ -695,61 +823,67 @@ components.drawing = function(){
 				var width = imageData.width;
 				var height = imageData.height;
 				var pix = imageData.data;
+				
 				while(pixelStack.length)
 				{
-					var newPos, x, y, pixelPos, reachLeft, reachRight;
-					newPos = pixelStack.pop();
-					x = newPos[0];
-					y = newPos[1];
-					pixelPos = (y*width + x) * 4;
-					while(y-- >= 0 && pix[pixelPos+3]==0){
-						pixelPos -= width * 4;
-				  	}
-				  	pixelPos += width * 4;
-				  	++y;
-				  	reachLeft = false;
-				  	reachRight = false;
-				  	while(y++ < height-1 && pix[pixelPos+3]==0)
-				  	{
-				 		pix[pixelPos]=0;
-						pix[pixelPos+1]=0;
-						pix[pixelPos+2]=0;
-						pix[pixelPos+3]=255;
-				    	if(x > 0)
-				    	{
-				      		if(pix[(pixelPos - 4)+3]==0)
-				      		{
-				        		if(!reachLeft){
-				          			pixelStack.push([x - 1, y]);
-				          			reachLeft = true;
-				        		}
-				      		}
-				      		else if(reachLeft)
-				      		{
-				        		reachLeft = false;
-				      		}
-				    	}
-				    	if(x < width-1)
-				    	{
-				      		if(pix[(pixelPos + 4)+3]==0)
-				      			{
-				        			if(!reachRight)
-				        			{
-				          				pixelStack.push([x + 1, y]);
-				          				reachRight = true;
-				        			}
-				      			}
-				      			else if(reachRight)
-				      			{
-									reachRight = false;
-				    			}
-				    		}
-				    		pixelPos += width * 4;
-						}
-					}
-					imageData.data = pix;
-					return imageData;
-				},
+				  var newPos, x, y, pixelPos, reachLeft, reachRight;
+				  newPos = pixelStack.pop();
+				  x = newPos[0];
+				  y = newPos[1];
+
+				  pixelPos = (y*width + x) * 4;
+				  while(y-- >= 0 && pix[pixelPos+3]==0){
+				    pixelPos -= width * 4;
+				  }
+				  pixelPos += width * 4;
+				  ++y;
+				  reachLeft = false;
+				  reachRight = false;
+				  while(y++ < height-1 && pix[pixelPos+3]==0)
+				  {
+				    pix[pixelPos]=0;
+					pix[pixelPos+1]=0;
+					pix[pixelPos+2]=0;
+					pix[pixelPos+3]=255;
+				    if(x > 0)
+				    {
+				      if(pix[(pixelPos - 4)+3]==0)
+				      {
+				        if(!reachLeft){
+				          pixelStack.push([x - 1, y]);
+				          reachLeft = true;
+				        }
+				      }
+				      else if(reachLeft)
+				      {
+				        reachLeft = false;
+				      }
+				    }
+
+				    if(x < width-1)
+				    {
+				      if(pix[(pixelPos + 4)+3]==0)
+				      {
+				        if(!reachRight)
+				        {
+				          pixelStack.push([x + 1, y]);
+				          reachRight = true;
+				        }
+				      }
+				      else if(reachRight)
+				      {
+				        reachRight = false;
+				      }
+				    }
+
+				    pixelPos += width * 4;
+				  }
+				}
+				imageData.data = pix;
+				
+				
+				return imageData;
+			},
 			
 		
 		scoreButton: function(e){
@@ -783,9 +917,6 @@ components.drawing = function(){
 			}
 		},
 		done: function() {
-			/* Retreive score */
-			remote.getScoreForCase(me.get('current_case_id'), me, this.canvas.width/2, this.canvas.height/2, emit);
-			
 			//Show small done display
 			this.clean();
 			var self = this;
@@ -827,7 +958,7 @@ components.drawing = function(){
 				}
 				context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 				context.putImageData(newImageData, 0, 0);
-				/*
+				
 				console.log("Before score");
 				console.log(new Date());
 				
@@ -903,7 +1034,6 @@ components.drawing = function(){
 					else
 						healthyMissed++;
 				}
-			
 				//totalScore += (scoreHit - (scoreMissed * .25));
 				$('#hit_' + friend.get("id")).text(targetHit );
 				$('#missed_' + friend.get("id")).text((healthyHit) );
@@ -920,11 +1050,11 @@ components.drawing = function(){
 				$('#individual_score_card').removeClass('individual_score_retract');
 				$('#individual_score_card').removeClass('individual_score_closed');
 				$('#individual_score_card').addClass('individual_score_extend');
-	*/
+
 				//alert("Your score " + targetHit + " out of: " + (targetHit) + " with " + healthyHit + " wrong regions identified");
 			}
-			//var t = 0;
-			//$("#numbers_total_ul").append('<li>' + (totalScore / totalPlayers) + '</li>');
+			var t = 0;
+			$("#numbers_total_ul").append('<li>' + (totalScore / totalPlayers) + '</li>');
 		},
 		showAllScores: function (scoreList){
 			var totalPlayers = 0;
@@ -1067,53 +1197,6 @@ components.drawing = function(){
 				$('#chat_window').append('<div class="chat_msg_con"><span class="chat_person" style="color: #'+player[0].get('player_color')+'; font-weight: bold;">'+player[0].get('name')+':</span><span class="chat_message"> '+message.message+'</span></div>');
 				chatEl.scrollTop = chatEl.scrollHeight;
 			});
-		},
-		setGoalPointsForCase: function(fileName, layer_ID) {
-				console.log("Load Data Run");
-				this.goalCanvas = $('canvas')[10];
-				this.goalCtx = this.goalCanvas.getContext("2d");
-				console.log(this.goalCanvas);
-				var left = 0;
-				var top = 0;
-				var self = this;
-				var img = new Image();
-				img.onload = function(){
-					var targetArr = new Array();
-					var healthyArr = new Array();
-				    self.goalCtx.drawImage(img, 0, 0, img.width, img.height);
-					var imageData=self.goalCtx.getImageData(0, 0, img.width, img.height);
-					var pix = imageData.data;
-					var k = 0;
-					for(var i = 0; i <img.height; i++){
-					    for(var j = 0; j <img.width; j++){
-					      //	console.log(parseInt(pix[k].toString()));
-					 		if(parseInt(pix[k].toString()) >= 200){
-								targetArr.push(j+left);
-								targetArr.push(i+top);
-					
-							}
-							if(parseInt(pix[k+2].toString()) >= 200){
-								healthyArr.push(j+left);
-								healthyArr.push(i+top);
-					
-							}
-							
-							k+=4;
-							
-					    }
-					}
-					this.goalPoints = {"targetPoints": targetArr, "healthyPoints": healthyArr};
-					remote.setGoalPointsForCaseAndLayer(me.get('current_case_id'), layer_ID, this.goalPoints);
-					console.log(targetArr.length);
-					//console.log("Here it is");
-					//console.log(targetArr);
-					console.log(healthyArr.length);
-					console.log(this.goalPoints);
-					
-				}
-				img.src = fileName;
-				
-			
 		},
 		showPager: function (b){
 			if(b){

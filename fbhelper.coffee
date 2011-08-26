@@ -213,13 +213,15 @@ updateAllOnlineStatus = (UID, friends) ->
 							
 setOnlineStatus = (dateTime, friend) ->
 	getUser friend.id, (cb) ->
-		dbPath = '/users/' + cb.info.facebook_user.id + '/facebook_user.json'
-		if cb.error == 0 or cb.error == 100
-			client.perform config.sql.fullHost + dbPath, "PUT", (res) ->
-				a = 1
-			,JSON.stringify dateTime	
-		else
-			console.log cb.error
+		if cb.info != undefined && cb.info != null 
+			dbPath = '/users/' + cb.info.facebook_user.id + '/facebook_user.json'
+			if cb.error == 0 or cb.error == 100
+				client.perform config.sql.fullHost + dbPath, "PUT", (res) ->
+					a = 1
+				,JSON.stringify dateTime	
+			else
+				console.log cb.error
+		
 			
 getFriends = (uid, cb) ->
 	getUser uid, (back) ->
@@ -324,10 +326,11 @@ addUser = (info, callback) ->
 addUserAsFriend = (playerID, friendInfo) ->
 	myID = ''
 	getUser playerID, (cb) ->
-		myID = cb.info.facebook_user.id
-		addUser friendInfo, (cb) ->
-			if cb.info != undefined
-				associateFriend myID, cb.info.facebook_user.id
+		if cb.error != 404
+			myID = cb.info.facebook_user.id
+			addUser friendInfo, (cb) ->
+				if cb.info != undefined
+					associateFriend myID, cb.info.facebook_user.id
 
 getUser = (fbid, cb) ->
 		
