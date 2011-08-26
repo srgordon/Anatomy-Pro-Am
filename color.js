@@ -1,3 +1,4 @@
+//Standard codes for text color/manipulation
 var ANSI_CODES = {
   "off": 0,
   "bold": 1,
